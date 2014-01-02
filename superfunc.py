@@ -3,6 +3,7 @@
 # Functions for supermemo 
 
 from datetime import date, timedelta
+import pdb
 
 class Card:
     """Card(repeat, interval, start_date)"""
@@ -58,10 +59,17 @@ class Card:
     def getcard(self):
         print 'question  ', self.question
         print 'answer    ', self.answer
-        if self.committed_date != date.fromordinal(1):
-            print '[Committed]'
-        else:
+
+        # if date.fromordinal(1) < self.committed_date:
+        #     print '[Committed]'
+        # else:
+        #     print '[Not Committed]'
+
+        if self.committed_date == date.fromordinal(1):
             print '[Not Committed]'
+        else:
+            print '[Committed]'
+            
 
     def getcard_info(self):
         print 'question  ', self.question
@@ -165,7 +173,7 @@ def goto_next_day():
 def test_card(card_list, today):
     study_list = []
     for card in card_list:
-        if card.next_date == today:
+        if date.fromordinal(1) < card.next_date <= today:
             card.getcard()
             quality = raw_input('choose a number 0-5 according to your performance: ')
             if quality.isdigit():
@@ -226,3 +234,57 @@ def get_study_status(card_list):
             count_committed += 1
     
     print 'Committed', count_committed, ', Total', len(card_list)
+
+def show_cards(card_list, today):
+    while len(card_list) > 0:
+        for card in card_list:
+            print '-----------------'
+            card.getcard()
+            print '-----------------'
+
+            # may be useless
+            if repr(type(card.committed_date)) != "<type 'datetime.date'>":
+                print 'committed date of this card may have error'
+
+            # Input command for each card to commit or reset it.
+            while True:
+                subcommand = raw_input('use command:\ncommit|reset|exit|info, press enter key to go to next card: ')
+
+                if subcommand == 'commit':
+                    if card.committed_date == date.fromordinal(1):
+                        commit_card(card, today)
+                    else:
+                        print 'This card has already been committed'
+
+                elif subcommand == 'reset':
+                    if card.committed_date == date.fromordinal(1):
+                        print 'This card has already been reset'
+                    else:
+                        reset_card(card)
+
+                elif subcommand == 'info':
+                    card.getcard_info()
+
+                elif subcommand == 'exit':
+                    break
+
+                elif subcommand == '':
+                    break
+
+                else:
+                    print "Please enter 'next' or 'info' or 'commit'"
+
+            if subcommand == 'exit':
+                break
+
+        if subcommand == 'exit':
+            break
+
+def show_card_number(card_list):
+    number = len(card_list)
+    if number == 0:
+        print 'No committed card'
+    elif number == 1:
+        print '1 card'
+    else:
+        print number, 'cards'

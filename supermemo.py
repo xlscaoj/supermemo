@@ -46,51 +46,38 @@ while True:
         card_list = superfunc.get_all_cards_from_file(datafile)
 
     elif command == 's':
-        # show each card 
-        card_list_backup = card_list[:]
-        while len(card_list_backup) > 0:
-            for card in card_list_backup:
-                print '-----------------'
-                card.getcard()
-                print '-----------------'
-
-                # may be useless
-                if repr(type(card.committed_date)) != "<type 'datetime.date'>":
-                    print 'committed date of this card may have error'
+        # show each card
+        committed_list = []
+        uncommitted_list = []
+        for card in card_list:
+            if card.committed_date == date.fromordinal(1):
+                uncommitted_list.append(card)
+            else:
+                committed_list.append(card)
                 
-                # Input command for each card to commit or reset it.
-                while True:
-                    subcommand = raw_input('use command:\ncommit|reset|exit|info, press enter key to go to next card: ')
-
-                    if subcommand == 'commit':
-                        if card.committed_date == date.fromordinal(1):
-                            superfunc.commit_card(card, today)
-                        else:
-                            print 'This card has already been committed'
-
-                    elif subcommand == 'reset':
-                        if card.committed_date == date.fromordinal(1):
-                            print 'This card has already been reset'
-                        else:
-                            superfunc.reset_card(card)
-
-                    elif subcommand == 'info':
-                        card.getcard_info()
-
-                    elif subcommand == 'exit':
-                        break
-
-                    elif subcommand == '':
-                        break
-
-                    else:
-                        print "Please enter 'next' or 'info' or 'commit'"
-
-                if subcommand == 'exit':
-                    break
-
-            if subcommand == 'exit':
+        while True:
+            select_mode = raw_input('committed? uncommitted? all? [c/u/a] ')
+            if select_mode == 'c':
+                # print the number of committed cards
+                superfunc.show_card_number(committed_list)
+                
+                # call show_cards() function to show each card one by one
+                superfunc.show_cards(committed_list, today)
                 break
+
+            elif select_mode == 'u':
+                superfunc.show_card_number(uncommitted_list)
+                superfunc.show_cards(uncommitted_list, today)
+                break
+
+            elif select_mode == 'a':
+                superfunc.show_card_number(card_list)
+                superfunc.show_cards(card_list, today)
+                break
+            
+            else:
+                print "Please enter: 'c', 'u' or 'a'"
+        
 
     elif command == 'd':
         print today
