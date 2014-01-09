@@ -89,11 +89,13 @@ while True:
     elif command == 'r':
         while True:
             confirm = raw_input('Do you want to reset all cards? [yes/no] ')
-            if confirm == 'yes' or confirm == 'y':
+            if confirm in ('yes', 'ye', 'y'):
                 for card in card_list:
                     superfunc.reset_card(card)
+                else:
+                    print "all cards have been reset!"
                 break
-            elif confirm == 'no' or confirm == 'n':
+            elif confirm in ('no', 'n', 'nop', 'nope'):
                 break
             else:
                 print "Please answer 'yes' or 'no'."
