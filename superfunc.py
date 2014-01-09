@@ -304,3 +304,15 @@ def show_card_number(card_list):
         print number, 'card'
     else:
         print number, 'cards'
+
+def seperate_committed_uncommitted(card_list):
+    committed_list = []
+    uncommitted_list = []
+
+    for card in card_list:
+        if card.committed_date == date.fromordinal(1):
+            uncommitted_list.append(card)
+        else:
+            committed_list.append(card)
+            
+    return [committed_list, uncommitted_list]

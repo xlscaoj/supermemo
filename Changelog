@@ -1,7 +1,9 @@
 2014/1/1
-basic command line interface supermemo, Done.
+	basic command line interface supermemo, Done.
 2014/1/2
 	fix: if any cards are missed to test today, it will not be tested in the following day.
 	move 's' part to superfunc.py as a function show_cards()
 	split committed card list and uncommitted card list from all card list
 	add 'card counter' to show the number of cards of each list before show them
+2014/1/9
+	add goto the 'next' and 'prev' card function in show_cards function

@@ -18,8 +18,6 @@ import pdb
 # 1 - incorrect response; the correct one remembered
 # 0 - complete blackout.
 
-
-
 today = date.today()
 
 print "Supermemo!\nThis program is designed to help you to memeorize whatever you want to learn.\nPress 'h' for command help."
@@ -28,6 +26,7 @@ print "Supermemo!\nThis program is designed to help you to memeorize whatever yo
 datafile = 'words.txt'
 card_list = superfunc.get_all_cards_from_file(datafile)
 
+# Interact with command line interface of supermemo program
 while True:
 
     command = raw_input('supermemo > ')
@@ -46,14 +45,7 @@ while True:
         card_list = superfunc.get_all_cards_from_file(datafile)
 
     elif command == 's':
-        # show each card
-        committed_list = []
-        uncommitted_list = []
-        for card in card_list:
-            if card.committed_date == date.fromordinal(1):
-                uncommitted_list.append(card)
-            else:
-                committed_list.append(card)
+        [committed_list, uncommitted_list] = superfunc.seperate_committed_uncommitted(card_list)
                 
         while True:
             select_mode = raw_input('committed? uncommitted? all? [c/u/a] ')
