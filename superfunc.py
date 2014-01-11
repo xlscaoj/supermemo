@@ -235,69 +235,6 @@ def get_study_status(card_list):
     
     print 'Committed', count_committed, ', Total', len(card_list)
 
-def show_cards(card_list, today):
-    index = 0
-    len_list = len(card_list)
-    while len_list > 0:
-        #pdb.set_trace()
-        index %= len_list
-                
-        card = card_list[index]
-        print '------(', index + 1, ')-------'
-        card.getcard()
-        print '-----------------'
-
-        # may be useless
-        if repr(type(card.committed_date)) != "<type 'datetime.date'>":
-            print 'committed date of this card may have error'
-
-        # Input command for each card to commit or reset it.
-        while True:
-            subcommand = raw_input('use command:\ncommit|reset|exit|info|prev|next, press enter key to go to next card: ')
-
-            if subcommand == 'commit':
-                if card.committed_date == date.fromordinal(1):
-                    commit_card(card, today)
-                    print '[the card is committed]'
-                else:
-                    print 'This card has already been committed'
-
-            elif subcommand == 'reset':
-                if card.committed_date == date.fromordinal(1):
-                    print 'This card has already been reset'
-                else:
-                    reset_card(card)
-
-            elif subcommand == 'info':
-                card.getcard_info()
-
-            elif subcommand == 'prev':
-                index -= 1
-                break
-
-            elif subcommand == 'next':
-                index += 1
-                break
-
-            elif subcommand == 'exit':
-                break
-
-            elif subcommand == '':
-                break
-
-            else:
-                print "Please enter 'commit' or 'reset' or 'exit' or 'info' or 'prev' or 'next'"
-
-        if subcommand == 'exit':
-            break
-
-        # if subcommand == 'exit':
-        #     break
-    
-    else:
-        print 'No card'
-
-
 def show_card_number(card_list):
     number = len(card_list)
     if number in [0, 1]:
@@ -316,3 +253,4 @@ def seperate_committed_uncommitted(card_list):
             committed_list.append(card)
             
     return [committed_list, uncommitted_list]
+
