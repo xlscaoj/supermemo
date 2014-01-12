@@ -7,3 +7,5 @@
 	add 'card counter' to show the number of cards of each list before show them
 2014/1/9
 	add goto the 'next' and 'prev' card function in show_cards function
+2014/1/12
+	add function for button 'previous', 'next' and 'show answer/question'

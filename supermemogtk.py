@@ -12,26 +12,42 @@ class Mainboard:
     def destroy(self, widget, data=None):
         gtk.main_quit()
 
-    def show_committed_card(self, widget, command):
-        len_card_list = len(self.committed_list)
-        if command == 'prev':
-            self.index -= 1
-            self.index %= len_card_list
-            card = self.committed_list[self.index]
-            card_string = 'Question:\n' + card.question + '\n====\n' + 'Answer:\n' + card.answer
-        elif command == 'next':
-            self.index += 1
-            self.index %= len_card_list
-            card = self.committed_list[self.index]
-            card_string = 'Question:\n' + card.question + '\n====\n' + 'Answer:\n' + card.answer
+    def show(self, widget):
+        return 'this is a test string'
+
+    def filp(self, widget, card_list):
+        #pdb.set_trace()
+        if self.current_card_side == 'front':
+            self.textbuffer.set_text('Answer:\n' + card_list[self.current_card_index].answer)
+            self.current_card_side = 'back'
+        elif self.current_card_side == 'back':
+            self.textbuffer.set_text('Question:\n' + card_list[self.current_card_index].question)
+            self.current_card_side = 'front'
         else:
-            print 'show_committed_card argument error'
-            
-        self.textbuffer.set_text(card_string)
+            print 'argument of card_side has error'
         
         self.textview.show()
-        
-        self.scrolled_window.show()
+        #self.scrolled_window.show()
+
+
+    def set_card_index(self, widget, command, len_card_list):
+        if command == 'prev':
+            self.current_card_index -= 1
+            self.current_card_index %= len_card_list
+        elif command == 'next':
+            self.current_card_index += 1
+            self.current_card_index %= len_card_list
+        else:
+            print 'navigate argument error'
+
+        if self.current_card_side == 'front':
+            self.textbuffer.set_text('Question:\n' + self.committed_list[self.current_card_index].question)
+        elif self.current_card_side == 'back':
+            self.textbuffer.set_text('Answer:\n' + self.committed_list[self.current_card_index].answer)
+        else:
+            print 'current_card_side error'
+
+        self.textview.show()
 
 
     def quit_test(self, widget, data=None):
@@ -44,16 +60,22 @@ class Mainboard:
 
 
     def test(self, widget, data=None):
+
         self.test_box = gtk.VBox(False, 0)
         
-        label = gtk.Label('card')
+        label = gtk.Label('Test')
         label.set_alignment(0, 0)
         label.show()
         self.test_box.pack_start(label, False, False, 0)
 
-
+        
         self.textview = gtk.TextView(buffer=None)
+        self.textview.set_justification(gtk.JUSTIFY_CENTER)
         self.textbuffer = self.textview.get_buffer()
+
+        self.textbuffer.set_text('Question:\n' + self.committed_list[self.current_card_index].question)
+
+        self.textview.show()
 
         self.scrolled_window = gtk.ScrolledWindow()
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
@@ -61,13 +83,17 @@ class Mainboard:
         self.test_box.pack_start(self.scrolled_window)
 
 
+        self.scrolled_window.show()
+
         separator = gtk.HSeparator()
         # The last 3 arguments to pack_start are:
         # expand, fill, padding.
         separator.show()
-
+        
         button_show_answer = gtk.Button("Show Answer/Question")
+        button_show_answer.connect("clicked", self.filp, self.committed_list)
         button_show_answer.show()
+
         
         box_evaluate = gtk.HBox(False, 0)
         score_button_1 = gtk.Button("0")
@@ -93,13 +119,12 @@ class Mainboard:
 
         box_evaluate.show()
 
-
         previous_card_button = gtk.Button("Previous")
-        previous_card_button.connect("clicked", self.show_committed_card, 'prev')
+        previous_card_button.connect("clicked", self.set_card_index, 'prev', self.len_committed_list)
         previous_card_button.show()
 
         next_card_button = gtk.Button("Next")
-        next_card_button.connect("clicked", self.show_committed_card, 'next')
+        next_card_button.connect("clicked", self.set_card_index, 'next', self.len_committed_list)
         next_card_button.show()
 
         quit_test_button = gtk.Button("Quit Test")
@@ -137,12 +162,16 @@ class Mainboard:
 
         self.textview = gtk.TextView(buffer=None)
         self.textbuffer = self.textview.get_buffer()
+        
+        self.textview.show()
+
 
         self.scrolled_window = gtk.ScrolledWindow()
         self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add(self.textview) # add textview into a scrolled window
         self.study_box.pack_start(self.scrolled_window)
 
+        self.scrolled_window.show()
 
         separator = gtk.HSeparator()
         # The last 3 arguments to pack_start are:
@@ -150,6 +179,7 @@ class Mainboard:
         separator.show()
 
         button_show_answer = gtk.Button("Show Answer/Question")
+        button_show_answer.connect("clicked", self.filp, self.all_card_list) #change to 'self.study_list' later
         button_show_answer.show()
         
         box_evaluate = gtk.HBox(False, 0)
@@ -164,16 +194,15 @@ class Mainboard:
 
         box_evaluate.show()
 
-
         previous_card_button = gtk.Button("Previous")
-        previous_card_button.connect("clicked", self.show_committed_card, 'prev')
+        previous_card_button.connect("clicked", self.set_card_index, 'prev', self.len_committed_list)
         previous_card_button.show()
 
         next_card_button = gtk.Button("Next")
-        next_card_button.connect("clicked", self.show_committed_card, 'next')
+        next_card_button.connect("clicked", self.set_card_index, 'next', self.len_committed_list)
         next_card_button.show()
 
-        quit_test_button = gtk.Button("Quit Test")
+        quit_test_button = gtk.Button("Quit Study")
         quit_test_button.connect("clicked", self.quit_study)
         quit_test_button.show()
 
@@ -197,11 +226,20 @@ class Mainboard:
         
 
     def __init__(self, all_card_list):
-        self.index = 0 # used for indicate the element in card_list
+        self.current_card_index = 0 # used for indicate the element in card_list
+        self.current_card_side = 'front' # 'front'(question) or 'back'(answer)
+
         self.all_card_list = all_card_list
         [self.committed_list, self.uncommitted_list] = superfunc.seperate_committed_uncommitted(all_card_list)
+        self.study_list = []
+
+        self.len_committed_list = len(self.committed_list)
+        self.len_uncommitted_list = len(self.uncommitted_list)
+        self.len_all_card_list = len(self.all_card_list)
+        self.len_study_list = len(self.study_list)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window.set_default_size(320, 320)
         self.window.connect("destroy", lambda w: gtk.main_quit())
         self.window.set_title("SuperMemo")
         self.window.set_border_width(5)

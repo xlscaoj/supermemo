@@ -40,7 +40,7 @@ def show_cards(card_list, today):
 
             if subcommand == 'commit':
                 if card.committed_date == date.fromordinal(1):
-                    commit_card(card, today)
+                    superfunc.commit_card(card, today)
                     print '[the card is committed]'
                 else:
                     print 'This card has already been committed'
@@ -49,7 +49,7 @@ def show_cards(card_list, today):
                 if card.committed_date == date.fromordinal(1):
                     print 'This card has already been reset'
                 else:
-                    reset_card(card)
+                    superfunc.reset_card(card)
 
             elif subcommand == 'info':
                 card.getcard_info()
