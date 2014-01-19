@@ -1,0 +1,6 @@
+* DONE add GUI
+  CLOSED: [2014-01-16 Thu 23:40]
+* DONE show committed cards, uncomitted cards deperately from all cards
+  CLOSED: [2014-01-16 Thu 23:40]
+* TODO add sqlite database file
+* TODO add function of study 
