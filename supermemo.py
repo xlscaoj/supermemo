@@ -1,176 +1,254 @@
-# Implementation of Supermemo 
-# Algorithm SM-2
-# Reference:
-# http://www.supermemo.com/english/ol/sm2.htm
-# 
-# Cao Jin <xlscaoj@gmail.com>
-# Thu Dec 26 21:53:52 CST 2013
+#!/usr/bin/python
+
+# Functions for supermemo 
+
+import sys
+sys.path.append('.')
 
 from datetime import date, timedelta
-import superfunc 
 import pdb
-
-# q should be 0-5:
-# 5 - perfect response
-# 4 - correct response after a hesitation
-# 3 - correct response recalled with serious difficulty
-# 2 - incorrect response; where the correct one seemed easy to recall
-# 1 - incorrect response; the correct one remembered
-# 0 - complete blackout.
-
-def show_cards(card_list, today):
-    index = 0
-    len_list = len(card_list)
-    while len_list > 0:
-        #pdb.set_trace()
-        index %= len_list
-                
-        card = card_list[index]
-        print '------(', index + 1, ')-------'
-        card.getcard()
-        print '-----------------'
-
-        # may be useless
-        if repr(type(card.committed_date)) != "<type 'datetime.date'>":
-            print 'committed date of this card may have error'
-
-        # Input command for each card to commit or reset it.
-        while True:
-            subcommand = raw_input('use command:\ncommit|reset|exit|info|prev|next, press enter key to go to next card: ')
-
-            if subcommand == 'commit':
-                if card.committed_date == date.fromordinal(1):
-                    superfunc.commit_card(card, today)
-                    print '[the card is committed]'
-                else:
-                    print 'This card has already been committed'
-
-            elif subcommand == 'reset':
-                if card.committed_date == date.fromordinal(1):
-                    print 'This card has already been reset'
-                else:
-                    superfunc.reset_card(card)
-
-            elif subcommand == 'info':
-                card.getcard_info()
-
-            elif subcommand == 'prev':
-                index -= 1
-                break
-
-            elif subcommand == 'next':
-                index += 1
-                break
-
-            elif subcommand == 'exit':
-                break
-
-            elif subcommand == '':
-                break
-
-            else:
-                print "Please enter 'commit' or 'reset' or 'exit' or 'info' or 'prev' or 'next'"
-
-        if subcommand == 'exit':
-            break
-
-        # if subcommand == 'exit':
-        #     break
-    
-    else:
-        print 'No card'
+import sqlite3
 
 
+class Card:
+    """Card(repeat, interval, start)"""
+    # question = ''
+    # answer = ''
+    # EF = 2.5 # 1.3 - 2.5
+    # repeat = 0
+    # interval = 0
+    # commit = date.fromordinal(1)
+    # start = date.fromordinal(1)
+    # next = date.fromordinal(1)
 
-today = date.today()
+    def __init__(self, *cardTuple):
+        # print(cardTuple)
+        initDate = date.fromordinal(1)
 
-print "Supermemo!\nThis program is designed to help you to memeorize whatever you want to learn.\nPress 'h' for command help."
+        self.question = cardTuple[0]
+        self.answer = cardTuple[1]
+        self.EF = 2.5 if cardTuple[2] == None else cardTuple[2]
+        self.repeat = 0 if cardTuple[3] == None else cardTuple[3]
+        self.interval = 0 if cardTuple[4] == None else cardTuple[4]
+        self.initDate = initDate if cardTuple[5] == None \
+            else date.fromordinal(cardTuple[5])
+        self.startDate = initDate if cardTuple[6] == None \
+            else date.fromordinal(cardTuple[6])
+        self.nextDate = initDate if cardTuple[7] == None \
+            else date.fromordinal(cardTuple[7])
 
-#datafile = raw_input('Please enter the filename of data: ')
-datafile = 'words.txt'
-card_list = superfunc.get_all_cards_from_file(datafile)
 
-# Interact with command line interface of supermemo program
-while True:
+    def get_interval(self, repeat, last_interval, EF):
+        """calculate the interval days from start with respect to repeat, last_interval and EF"""
+        if repeat == 1:
+            interval = 1
+        elif repeat == 2:
+            interval = 6
+        else:
+            interval = last_interval * EF
+            interval = int(round(interval))
+        return interval
+        
 
-    command = raw_input('supermemo > ')
+    def update(self, q):
+        """update the date on which this card would appear"""
+        self.repeat += 1
 
-    if command == 'h':
-        superfunc.show_help()
+        newEF = self.EF+(0.1-(5-q)*(0.08+(5-q)*0.02))
+        if newEF < 1.3:
+            self.EF = 1.3
+        elif newEF > 2.5:
+            self.EF = 2.5
+        else:
+            self.EF = newEF
 
-    elif command == 'n':
-        # this operation should be placed before the program exit
-        superfunc.save_card_list_to_file(datafile, card_list) 
+        self.interval = self.get_interval(self.repeat, self.interval, self.EF)
+        self.nextDate = self.startDate + timedelta(days=self.interval)
 
-        today = superfunc.goto_next_day()
-        print 'Today is', today
+    def add(self, today):
+        self.initDate = today
+        self.startDate= today
+        self.nextDate = today + timedelta(1)
 
-        # this operation shoud be placed after program start
-        card_list = superfunc.get_all_cards_from_file(datafile)
+    def reset(self):
+        self.EF = 2.5
+        self.repeat = 0
+        self.interval = 0
+        self.initDate = date.fromordinal(1)
+        self.startDate = date.fromordinal(1)
+        self.nextDate = date.fromordinal(1)
 
-    elif command == 's':
-        [committed_list, uncommitted_list] = superfunc.seperate_committed_uncommitted(card_list)
-                
-        while True:
-            select_mode = raw_input('committed? uncommitted? all? [c/u/a] ')
-            if select_mode == 'c':
-                # print the number of committed cards
-                superfunc.show_card_number(committed_list)
-                
-                # call show_cards() function to show each card one by one
-                show_cards(committed_list, today)
-                break
+    def restart(self, today):
+        """reset the date of the card if q < 3"""
+        self.startDate= today
+        self.repeat = 0
+        self.interval = 0
 
-            elif select_mode == 'u':
-                superfunc.show_card_number(uncommitted_list)
-                show_cards(uncommitted_list, today)
-                break
+    def getcard(self):
+        print 'question  ', self.question
+        print 'answer    ', self.answer
 
-            elif select_mode == 'a':
-                superfunc.show_card_number(card_list)
-                show_cards(card_list, today)
-                break
+        # if date.fromordinal(1) < self.init:
+        #     print '[Initted]'
+        # else:
+        #     print '[Not Initted]'
+
+        if self.initDate == date.fromordinal(1):
+            print '[Not Initted]'
+        else:
+            print '[Initted]'
             
-            else:
-                print "Please enter: 'c', 'u' or 'a'"
-        
+    def getcard_info(self):
+        print 'question  ', self.question
+        print 'answer    ', self.answer
+        print 'EF        ', self.EF
+        print 'repeat    ', self.repeat
+        print 'interval  ', self.interval
+        print 'init      ', self.initDate
+        print 'start     ', self.startDate
+        print 'next      ', self.nextDate
 
-    elif command == 'd':
-        print today
 
-    elif command == 't':
-        study_list = superfunc.test_card(card_list, today)
-        superfunc.study_card(study_list)
+def importcards(csvfilename):
+    '''import csv or txt file into sqlite db
+    '''
 
-    elif command == 'r':
-        while True:
-            confirm = raw_input('Do you want to reset all cards? [yes/no] ')
-            if confirm in ('yes', 'ye', 'y'):
-                for card in card_list:
-                    superfunc.reset_card(card)
-                else:
-                    print "all cards have been reset!"
-                break
-            elif confirm in ('no', 'n', 'nop', 'nope'):
-                break
-            else:
-                print "Please answer 'yes' or 'no'."
-        
-    elif command == 'i':
-        superfunc.get_study_status(card_list)
+    conn = sqlite3.connect('sm.db')
+    c = conn.cursor()
+    table = csvfilename[:-4]
+    # create table named 'csvfilename'
+   
+    try:
+        sqlcmd = ('CREATE TABLE {}('
+                  'question TEXT, '
+                  'answer TEXT, '
+                  'ef REAL, '
+                  'repeat INTEGER, '
+                  'interval INTEGER, '
+                  'init INTEGER, '
+                  'start INTEGER, '
+                  'next INTEGER)'.format(table))
 
-    elif command == 'save':
-        superfunc.save_card_list_to_file(datafile, card_list)
-        
+        c.execute(sqlcmd)
+    except sqlite3.OperationalError:
+        # return "Table '{}' has existed already.".format(table)
+        print(sys.exc_info()[0])
+        return False
 
-    elif command == '':
-        pass
+    # insert each line into table 'csvfilename'
+    sqlcmd = 'INSERT INTO {}(question, answer) values (?,?)'.format(table)
+    
+    # read content of csvfilename into a list of tuple
+    import csv
+    with open(csvfilename, 'r') as csvfile:
+        spamreader = csv.reader(csvfile)
+        for card in spamreader:
+            # print tuple(card)
+            c.execute(sqlcmd, tuple(card))
+    
+    conn.commit()
+    conn.close()
 
-    elif command == 'q':
-        
-        print 'exiting program...'
-        break    
+    return True
 
-    else:
-        print "Ooops! A valid command, Please!. \n Press 'h' for help."
+def readcards(table):
+    '''read cards from table in sm.db
+    '''
 
+    conn = sqlite3.connect('sm.db')
+    c = conn.cursor()
+    # read db
+    sqlcmd = 'SELECT * FROM {}'.format(table)
+    c.execute(sqlcmd)
+    cardsList = c.fetchall()
+
+    conn.close()
+
+    return cardsList
+
+def removetable(table):
+    '''remove table from sm.db
+
+    return False if no such table, 
+           Ture if the table is deleted
+    '''
+
+    conn = sqlite3.connect('sm.db')
+    c = conn.cursor()
+    sqlcmd = 'DROP TABLE {}'.format(table)
+
+    try:
+        c.execute(sqlcmd)
+    except:
+        return False
+
+    conn.commit()
+    conn.close()
+
+    return True
+
+def listables():
+    '''list all tables in sm.db
+
+    return a list of name of tables
+    '''
+
+    conn = sqlite3.connect('sm.db')
+    c = conn.cursor()
+    c.execute('SELECT name FROM sqlite_master')
+    tables = c.fetchall()
+    conn.close()
+
+    return tables
+
+def TupleList_to_CardList(TupleList):
+    CardList = []
+    for cardtuple in TupleList:
+        CardList.append(Card(*cardtuple))
+    
+    return CardList
+
+def CardList_to_TupleList(CardList):
+    TupleList = []
+    for Cardobj in CardList:
+        TupleList.append((Cardobj.question,
+                          Cardobj.answer,
+                          Cardobj.EF,
+                          Cardobj.repeat,
+                          Cardobj.interval,
+                          Cardobj.initDate.toordinal(),
+                          Cardobj.startDate.toordinal(),
+                          Cardobj.nextDate.toordinal()))
+
+    return TupleList
+
+def update_table(table, TupleList):
+    '''update all card record in sm.db
+
+    return True if no error, else False
+    '''
+
+    conn = sqlite3.connect('sm.db')
+    c = conn.cursor()
+    sqlcmd = ('UPDATE {} SET '
+              'ef=?, '
+              'repeat=?, '
+              'interval=?, '
+              'init=?, '
+              'start=?, '
+              'next=? '
+              'WHERE question=?'.format(table))
+
+    for card in TupleList:
+        c.execute(sqlcmd, (card[2], 
+                           card[3], 
+                           card[4], 
+                           card[5], 
+                           card[6], 
+                           card[7], 
+                           card[0]))
+
+    conn.commit()
+    conn.close()
+
+    return True

@@ -5,7 +5,7 @@ pygtk.require('2.0')
 import gtk
 import pdb
 from datetime import date, timedelta
-import superfunc 
+import supermemo 
 
 
 class Mainboard:
@@ -290,7 +290,7 @@ class Mainboard:
         self.current_card_side = 'front' # 'front'(question) or 'back'(answer)
 
         self.all_card_list = all_card_list
-        [self.committed_list, self.uncommitted_list] = superfunc.seperate_committed_uncommitted(all_card_list)
+        [self.committed_list, self.uncommitted_list] = supermemo.seperate_committed_uncommitted(all_card_list)
         self.test_list = []
         self.study_list = []
 
@@ -321,7 +321,6 @@ class Mainboard:
         self.mainbox.pack_start(self.button_study)
         self.button_study.connect("clicked", self.study)
 
-        
         self.mainbox.show()
         self.window.add(self.mainbox)
         self.window.show()
@@ -333,7 +332,7 @@ def main():
 
 #if __name__ == "__main__":
 datafile = 'words.txt'
-card_list = superfunc.get_all_cards_from_file(datafile)
+card_list = supermemo.get_all_cards_from_file(datafile)
 
 
 board = Mainboard(card_list)
